@@ -1,0 +1,5 @@
+# see http://editorconfig.org/ for docs on this file
+
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2

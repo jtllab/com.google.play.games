@@ -1,0 +1,69 @@
+name: UPM Sync
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build:
+    # 需要 python 安装 unpack-unitypackage 工具
+    runs-on: ubuntu-latest
+    env:
+      version: 2.1.0
+    steps:
+      - uses: actions/checkout@v2
+      - name: Config
+        run: |
+          git config --local user.email "contact@jtllab.com"
+          git config --local user.name "jtllab-bot"
+
+      - name: Install Python
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip tar unzip
+      - name: Install unpack-unitypackage
+        run: |
+          pip3 install unpack-unitypackage
+
+      - name: Download Package
+        run: |
+          rm -rf Staging
+          mkdir Staging
+          cd Staging
+
+          # 从 https://github.com/playgameservices/play-games-plugin-for-unity.git clone，复制 meta 文件出来
+          git clone --depth 1 --branch v${{ env.version }} https://github.com/playgameservices/play-games-plugin-for-unity.git
+
+          mv play-games-plugin-for-unity/current-build/GooglePlayGamesPlugin-${{ env.version }}.unitypackage content.unitypackage
+          ls
+          unpack_unitypackage content.unitypackage
+
+          # 将 play-games-plugin-for-unity Assets/Public/GooglePlayGames/com.google.play.games 目录下的 meta 文件(子文件夹递归)移动到 content_unpack/Assets/GooglePlayGames/com.google.play.games 及其对应的子目录下
+          cd play-games-plugin-for-unity/Assets/Public/GooglePlayGames/com.google.play.games
+          find . -name "*.meta" -exec cp --parents \{\} ../../../../../content_unpack/Assets/GooglePlayGames/com.google.play.games \;
+          cd ../../../../../
+
+          rm content.unitypackage
+          cd content_unpack/Assets
+          rm -rf ExternalDependencyManager
+          rm -rf GooglePlayGames/com.google.play.games/current-build
+
+          ls
+          git add --a
+          git commit -m "Package Update ${{ env.version }}"
+          git push origin
+      - name: Cook UPM
+        run: |
+          ls Staging/content_unpack/Assets/GooglePlayGames/com.google.play.games/
+          git subtree split -P Staging/content_unpack/Assets/GooglePlayGames/com.google.play.games/ -b upm
+          git checkout upm
+          # add git tag
+          git tag -f ${{ env.version }}
+          git push origin --tags -f
+          ls
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: upm
+          force: true
