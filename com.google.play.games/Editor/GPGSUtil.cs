@@ -124,10 +124,18 @@ namespace GooglePlayGames.Editor
 #if UNITY_2018_4_OR_NEWER
                     // Search for root path in plugin locations for both Asset packages and UPM packages
                     string[] dirs = Directory.GetDirectories("Packages", RootFolderName, SearchOption.AllDirectories);
-                    string[] dir1 = Directory.GetDirectories("Assets", RootFolderName, SearchOption.AllDirectories);
-                    int dirsLength = dirs.Length;
-                    Array.Resize<string>(ref dirs, dirsLength + dir1.Length);
-                    Array.Copy(dir1, 0, dirs, dirsLength, dir1.Length);
+                    {
+                        string[] dir1 = Directory.GetDirectories("Assets", RootFolderName, SearchOption.AllDirectories);
+                        int dirsLength = dirs.Length;
+                        Array.Resize<string>(ref dirs, dirsLength + dir1.Length);
+                        Array.Copy(dir1, 0, dirs, dirsLength, dir1.Length);
+                    }
+                    {
+                        string[] dir2 = Directory.GetDirectories("Library", RootFolderName, SearchOption.AllDirectories);
+                        int dirsLength = dirs.Length;
+                        Array.Resize<string>(ref dirs, dirsLength + dir2.Length);
+                        Array.Copy(dir2, 0, dirs, dirsLength, dir2.Length);
+                    }
 #else
                     string[] dirs = Directory.GetDirectories("Assets", RootFolderName, SearchOption.AllDirectories);
 #endif
@@ -349,7 +357,7 @@ namespace GooglePlayGames.Editor
                 throw new Exception("cannot be empty");
             }
 
-            string[] parts = s.Split(new char[] {'.'});
+            string[] parts = s.Split(new char[] { '.' });
             foreach (string p in parts)
             {
                 char[] bytes = p.ToCharArray();
@@ -603,7 +611,7 @@ namespace GooglePlayGames.Editor
             EnsureDirExists(dirName);
             foreach (DictionaryEntry ent in resourceKeys)
             {
-                string key = MakeIdentifier((string) ent.Key);
+                string key = MakeIdentifier((string)ent.Key);
                 constantsValues += "        public const string " +
                                    key + " = \"" + ent.Value + "\"; // <GPGSID>\n";
             }
